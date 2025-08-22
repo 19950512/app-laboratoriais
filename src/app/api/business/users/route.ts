@@ -3,6 +3,7 @@ import { prisma } from '../../../../lib/prisma';
 import { JwtService } from '../../../../lib/jwt';
 import { PasswordService } from '../../../../utils/crypto';
 import { validate } from '../../../../utils/validation';
+import { ContextEnum } from '@/types';
 import Joi from 'joi';
 
 // Schema para criação de usuário
@@ -202,7 +203,7 @@ export async function POST(request: NextRequest) {
         data: {
           businessId: decoded.businessId,
           accountId: decoded.accountId,
-          context: 'account_create',
+          context: ContextEnum.ACCOUNT_CREATE,
           description: `Usuário criado: ${name} (${email})`,
           additionalData: { 
             newUserId: newUser.id,

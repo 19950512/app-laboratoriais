@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
 import { JwtService } from '../../../lib/jwt';
+import { ContextEnum } from '@/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -84,31 +85,7 @@ export async function GET(request: NextRequest) {
       prisma.auditoria.count({ where })
     ]);
 
-    // Log de auditoria para acesso aos logs
-    try {
-      await prisma.auditoria.create({
-        data: {
-          businessId: decoded.businessId,
-          accountId: decoded.accountId,
-          context: 'session_create',
-          description: 'Acesso aos logs de auditoria',
-          additionalData: {
-            filters: {
-              contexts,
-              accounts,
-              businesses,
-              startDate,
-              endDate,
-              page,
-              limit
-            },
-            totalResults: totalCount
-          }
-        }
-      });
-    } catch (auditError) {
-      console.warn('Audit log failed:', auditError);
-    }
+    // Não registrar log de auditoria para visualização de logs (evita recursão infinita)
 
     return NextResponse.json({
       success: true,
@@ -199,21 +176,7 @@ export async function POST(request: NextRequest) {
         accounts,
         contexts: contexts.map(c => c.context),
         businesses: business ? [business] : [],
-        allContexts: [
-          'auth_login',
-          'auth_logout', 
-          'auth_recovery',
-          'auth_deny',
-          'auth_password_change',
-          'account_create',
-          'account_update',
-          'account_deactivate',
-          'business_create',
-          'business_update',
-          'profile_update',
-          'session_create',
-          'session_revoke'
-        ]
+        allContexts: Object.values(ContextEnum)
       }
     });
 

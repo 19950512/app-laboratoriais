@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import { JwtService } from '../../../../lib/jwt';
 import { validate, updatePreferencesSchema } from '../../../../utils/validation';
+import { ContextEnum } from '@/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -154,7 +155,7 @@ export async function PUT(request: NextRequest) {
         data: {
           businessId: decoded.businessId,
           accountId: decoded.accountId,
-          context: 'theme_change',
+          context: ContextEnum.THEME_CHANGE,
           description: `Tema alterado para: ${theme}`,
           additionalData: { 
             previousTheme: currentPreferences?.theme || null,

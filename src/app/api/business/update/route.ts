@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import { JwtService } from '../../../../lib/jwt';
 import { validate } from '../../../../utils/validation';
+import { ContextEnum } from '@/types';
 import Joi from 'joi';
 
 // Schema para atualização da empresa
@@ -123,7 +124,7 @@ export async function PUT(request: NextRequest) {
         data: {
           businessId: decoded.businessId,
           accountId: decoded.accountId,
-          context: 'business_update',
+          context: ContextEnum.BUSINESS_UPDATE,
           description: `Dados da empresa atualizados: ${changedFields.join(', ')}`,
           additionalData: { 
             businessId: updatedBusiness.id,

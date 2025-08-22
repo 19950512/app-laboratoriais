@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import bcrypt from 'bcryptjs';
-
-interface CreateAccountRequest {
-  businessName: string;
-  businessDocument: string;
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-}
+import { ContextEnum } from '@/types';
 
 async function registerHandler(request: NextRequest): Promise<NextResponse> {
   if (request.method !== 'POST') {
@@ -107,7 +99,7 @@ async function registerHandler(request: NextRequest): Promise<NextResponse> {
         data: {
           businessId: business.id,
           accountId: account.id,
-          context: 'business_create',
+          context: ContextEnum.BUSINESS_CREATE,
           description: `Empresa "${business.name}" criada durante registro`,
           additionalData: {
             businessName: business.name,
@@ -122,7 +114,7 @@ async function registerHandler(request: NextRequest): Promise<NextResponse> {
         data: {
           businessId: business.id,
           accountId: account.id,
-          context: 'account_create',
+          context: ContextEnum.ACCOUNT_CREATE,
           description: `Conta "${account.name}" criada para empresa "${business.name}"`,
           additionalData: {
             accountName: account.name,

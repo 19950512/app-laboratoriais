@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../lib/prisma';
 import { JwtService } from '../../../lib/jwt';
+import { ContextEnum } from '@/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
         data: {
           businessId: decoded.businessId,
           accountId: decoded.accountId,
-          context: 'business_update',
+          context: ContextEnum.BUSINESS_UPDATE,
           description: 'Visualização de dados da empresa',
           additionalData: { businessId: business.id }
         }
@@ -147,7 +148,7 @@ export async function PUT(request: NextRequest) {
         data: {
           businessId: decoded.businessId,
           accountId: decoded.accountId,
-          context: 'business_update',
+          context: ContextEnum.BUSINESS_UPDATE,
           description: `Empresa atualizada: ${existingBusiness.name} → ${name.trim()}`,
           additionalData: { 
             oldName: existingBusiness.name,

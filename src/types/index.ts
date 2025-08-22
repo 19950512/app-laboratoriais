@@ -76,6 +76,8 @@ export enum ContextEnum {
   BUSINESS_CREATE = 'business_create',
   BUSINESS_UPDATE = 'business_update',
   PROFILE_UPDATE = 'profile_update',
+  PREFERENCES_UPDATE = 'preferences_update',
+  THEME_CHANGE = 'theme_change',
   SESSION_CREATE = 'session_create',
   SESSION_REVOKE = 'session_revoke',
 }

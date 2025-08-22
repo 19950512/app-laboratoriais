@@ -3,6 +3,7 @@ import { prisma } from '../../../../lib/prisma';
 import { JwtService } from '../../../../lib/jwt';
 import { PasswordService } from '../../../../utils/crypto';
 import { validate, updateAccountSchema } from '../../../../utils/validation';
+import { ContextEnum } from '@/types';
 
 export async function PUT(request: NextRequest) {
   try {
@@ -143,7 +144,7 @@ export async function PUT(request: NextRequest) {
         data: {
           businessId: decoded.businessId,
           accountId: decoded.accountId,
-          context: 'profile_update',
+          context: ContextEnum.PROFILE_UPDATE,
           description: `Perfil atualizado: ${auditDescription.join(', ')}`,
           additionalData: { 
             accountId: updatedAccount.id,

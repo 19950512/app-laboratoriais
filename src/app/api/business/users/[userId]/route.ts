@@ -3,6 +3,7 @@ import { prisma } from '../../../../../lib/prisma';
 import { JwtService } from '../../../../../lib/jwt';
 import { PasswordService } from '../../../../../utils/crypto';
 import { validate } from '../../../../../utils/validation';
+import { ContextEnum } from '@/types';
 import Joi from 'joi';
 
 // Schema para atualização de usuário
@@ -173,7 +174,7 @@ export async function PUT(request: NextRequest, { params }: { params: { userId: 
         data: {
           businessId: decoded.businessId,
           accountId: decoded.accountId,
-          context: 'account_update',
+          context: ContextEnum.ACCOUNT_UPDATE,
           description: `Usuário ${currentUser.name} atualizado: ${changedFields.join(', ')}`,
           additionalData: { 
             targetUserId: updatedUser.id,
@@ -262,7 +263,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { userI
         data: {
           businessId: decoded.businessId,
           accountId: decoded.accountId,
-          context: 'account_deactivate',
+          context: ContextEnum.ACCOUNT_DEACTIVATE,
           description: `Usuário ${user.name} (${user.email}) foi desativado`,
           additionalData: { 
             targetUserId: user.id,
