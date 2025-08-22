@@ -23,6 +23,7 @@ model Business {
   roles              Role[]
   routeRoles         RouteRole[]
   tokensJwt          TokenJwt[]
+  bankAccounts       BankAccount[]
 
   @@index([document])
   @@index([active])
@@ -161,6 +162,25 @@ model RouteRole {
   @@index([route])
   @@index([businessId, route])
   @@map("route_roles")
+}
+
+model BankAccount {
+  id                 String   @id @default(uuid()) @db.Uuid
+  businessId         String   @map("business_id") @db.Uuid
+  nameAccountBank    String   @map("name_account_bank") @db.VarChar(255)
+  bankName           String   @map("bank_name") @db.VarChar(50)
+  certificatePublic  String   @map("certificate_public")
+  certificatePrivate String   @map("certificate_private")
+  clientId           String   @map("client_id") @db.VarChar(255)
+  secretId           String   @map("secret_id") @db.VarChar(255)
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  business           Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([active])
+  @@map("bank_accounts")
 }
 
 enum ThemeEnum {

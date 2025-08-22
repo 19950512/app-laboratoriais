@@ -240,3 +240,14 @@ export interface FormState {
   isSubmitting: boolean;
   isValid: boolean;
 }
+
+export interface BankAccount {
+  id: string;
+  nameAccountBank: string;
+  bankName: string;
+  certificatePublic: string;
+  certificatePrivate: string;
+  clientId: string;
+  secretId: string;
+  active: boolean;
+}

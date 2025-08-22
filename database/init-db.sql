@@ -32,7 +32,10 @@ CREATE TYPE ContextEnum AS ENUM (
     'session_revoke',
     'role_create',
     'role_update',
-    'role_delete'
+    'role_delete',
+    'bank_account_create',
+    'bank_account_update',
+    'bank_account_delete'
 );
 
 -- =====================================================
@@ -263,6 +266,38 @@ CREATE INDEX idx_auditoria_account_moment ON auditoria(account_id, moment DESC);
 CREATE INDEX idx_auditoria_business_context_moment ON auditoria(business_id, context, moment DESC);
 
 -- =====================================================
+-- TABELA: bank_accounts (Contas Bancárias)
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS bank_accounts (
+    business_id UUID NOT NULL REFERENCES business(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name_account_bank VARCHAR(255) NOT NULL,
+    bank_name VARCHAR(50) NOT NULL CHECK (bank_name IN ('Inter', 'Asaas')),
+    certificate_public TEXT NOT NULL,
+    certificate_private TEXT NOT NULL,
+    client_id VARCHAR(255) NOT NULL,
+    secret_id VARCHAR(255) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL
+);
+
+-- Comentários
+COMMENT ON TABLE bank_accounts IS 'Tabela que armazena as contas bancárias configuradas no sistema';
+COMMENT ON COLUMN bank_accounts.name_account_bank IS 'Nome da conta bancária';
+COMMENT ON COLUMN bank_accounts.bank_name IS 'Nome do banco (Inter, Asaas)';
+COMMENT ON COLUMN bank_accounts.certificate_public IS 'Certificado público da conta bancária';
+COMMENT ON COLUMN bank_accounts.certificate_private IS 'Certificado privado da conta bancária';
+COMMENT ON COLUMN bank_accounts.client_id IS 'ID do cliente para autenticação';
+COMMENT ON COLUMN bank_accounts.secret_id IS 'ID secreto para autenticação';
+COMMENT ON COLUMN bank_accounts.active IS 'Indica se a conta bancária está ativa';
+
+-- Índices para performance
+CREATE INDEX idx_bank_accounts_active ON bank_accounts(active);
+CREATE INDEX idx_bank_accounts_name ON bank_accounts(name_account_bank);
+
+-- =====================================================
 -- TRIGGERS PARA UPDATE AUTOMÁTICO DE updated_at
 -- =====================================================
 
@@ -294,6 +329,10 @@ CREATE TRIGGER update_tokens_jwt_updated_at
 
 CREATE TRIGGER update_roles_updated_at 
     BEFORE UPDATE ON roles 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_bank_accounts_updated_at 
+    BEFORE UPDATE ON bank_accounts 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- =====================================================
@@ -378,7 +417,7 @@ BEGIN
     RAISE NOTICE '========================================';
     RAISE NOTICE 'Database setup completed successfully!';
     RAISE NOTICE '========================================';
-    RAISE NOTICE 'Tables created: business, accounts, account_preferences, tokens_jwt, roles, account_roles, route_roles, auditoria';
+    RAISE NOTICE 'Tables created: business, accounts, account_preferences, tokens_jwt, roles, account_roles, route_roles, auditoria, bank_accounts';
     RAISE NOTICE 'Views created: v_active_users, v_active_sessions';
     RAISE NOTICE 'Indexes created for optimal performance';
     RAISE NOTICE 'Triggers set for automatic updated_at management';
@@ -392,6 +431,9 @@ ALTER TYPE context_enum ADD VALUE IF NOT EXISTS 'account_role_remove';
 ALTER TYPE context_enum ADD VALUE IF NOT EXISTS 'role_create';
 ALTER TYPE context_enum ADD VALUE IF NOT EXISTS 'role_update';
 ALTER TYPE context_enum ADD VALUE IF NOT EXISTS 'role_delete';
+ALTER TYPE context_enum ADD VALUE IF NOT EXISTS 'bank_account_create';
+ALTER TYPE context_enum ADD VALUE IF NOT EXISTS 'bank_account_update';
+ALTER TYPE context_enum ADD VALUE IF NOT EXISTS 'bank_account_delete';
 
 -- Remoção de índice
 DROP INDEX IF EXISTS account_preferences_account_id_key;

@@ -50,10 +50,15 @@ export default function ProfilePage(): JSX.Element {
 
   const loadUserRoles = async () => {
     if (!account?.id) return;
-    
+
     setRolesLoading(true);
     try {
       const token = getCookie('auth-token');
+      if (!token) {
+        console.error('Token de autenticação não encontrado.');
+        return;
+      }
+
       const response = await fetch(`/api/users/${account.id}/roles`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -63,9 +68,11 @@ export default function ProfilePage(): JSX.Element {
       if (response.ok) {
         const data = await response.json();
         setUserRoles(data.data.roles);
+      } else {
+        console.error('Erro ao carregar cargos do usuário:', response.statusText);
       }
     } catch (error) {
-      console.error('Error loading user roles:', error);
+      console.error('Erro ao carregar cargos do usuário:', error);
     } finally {
       setRolesLoading(false);
     }
