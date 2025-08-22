@@ -25,10 +25,8 @@ export function UserRoleManager({ userId, userName, onRoleChange, refreshTrigger
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [selectedRoleId, setSelectedRoleId] = useState('');
   const [adding, setAdding] = useState(false);
+  const [selectedRoleId, setSelectedRoleId] = useState('');
 
   const fetchUserRoles = async () => {
     try {
@@ -53,7 +51,7 @@ export function UserRoleManager({ userId, userName, onRoleChange, refreshTrigger
       setUserRoles(userRolesData.data.roles);
       setAvailableRoles(allRolesData.data.roles.filter((role: Role) => role.active));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -61,12 +59,10 @@ export function UserRoleManager({ userId, userName, onRoleChange, refreshTrigger
 
   const addRole = async () => {
     if (!selectedRoleId) {
-      setError('Selecione um cargo');
       return;
     }
 
     setAdding(true);
-    setError(null);
 
     try {
       const token = getCookie('auth-token');
@@ -86,11 +82,10 @@ export function UserRoleManager({ userId, userName, onRoleChange, refreshTrigger
       }
 
       setSelectedRoleId('');
-      setShowAddForm(false);
       await fetchUserRoles();
       onRoleChange?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+      console.error(err);
     } finally {
       setAdding(false);
     }
@@ -117,7 +112,7 @@ export function UserRoleManager({ userId, userName, onRoleChange, refreshTrigger
       await fetchUserRoles();
       onRoleChange?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+      console.error(err);
     }
   };
 
@@ -135,81 +130,45 @@ export function UserRoleManager({ userId, userName, onRoleChange, refreshTrigger
     return <div className="p-4">Carregando cargos...</div>;
   }
 
-  // Filtrar cargos disponíveis (que o usuário ainda não possui)
-  const rolesNotAssigned = availableRoles.filter(
-    role => !userRoles.some(userRole => userRole.id === role.id)
-  );
-
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h4 className="font-medium">Cargos de {userName}</h4>
-        {rolesNotAssigned.length > 0 && (
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            {showAddForm ? 'Cancelar' : 'Adicionar Cargo'}
-          </button>
-        )}
+    <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white p-6 rounded-lg shadow space-y-4">
+      <h3 className="text-xl font-semibold">Gerenciar Cargos para {userName}</h3>
+      <div className="flex items-center space-x-4">
+        <select
+          className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          value={selectedRoleId}
+          onChange={(e) => setSelectedRoleId(e.target.value)}
+        >
+          <option value="">Selecione um cargo</option>
+          {availableRoles.map((role) => (
+            <option key={role.id} value={role.id}>
+              {role.name}
+            </option>
+          ))}
+        </select>
+        <button
+          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          onClick={addRole}
+          disabled={adding}
+        >
+          {adding ? 'Adicionando...' : 'Adicionar'}
+        </button>
       </div>
-
-      {error && (
-        <div className="p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
-          {error}
-        </div>
-      )}
-
-      {showAddForm && rolesNotAssigned.length > 0 && (
-        <div className="p-3 border rounded bg-gray-50">
-          <div className="flex items-center space-x-2">
-            <select
-              value={selectedRoleId}
-              onChange={(e) => setSelectedRoleId(e.target.value)}
-              className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
-            >
-              <option value="">Selecione um cargo</option>
-              {rolesNotAssigned.map((role) => (
-                <option key={role.id} value={role.id}>
-                  {role.name}
-                </option>
-              ))}
-            </select>
+      <div className="space-y-2">
+        {userRoles.map((role) => (
+          <div
+            key={role.id}
+            className="flex items-center justify-between p-2 border border-gray-300 dark:border-gray-700 rounded-md"
+          >
+            <span>{role.name}</span>
             <button
-              onClick={addRole}
-              disabled={adding || !selectedRoleId}
-              className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+              className="px-2 py-1 text-red-500 hover:text-red-700 focus:outline-none"
+              onClick={() => removeRole(role.id)}
             >
-              {adding ? 'Adicionando...' : 'Adicionar'}
+              Remover
             </button>
           </div>
-        </div>
-      )}
-
-      <div className="space-y-2">
-        {userRoles.length === 0 ? (
-          <div className="text-sm text-gray-500 italic">
-            Usuário não possui cargos atribuídos
-          </div>
-        ) : (
-          userRoles.map((role) => (
-            <div key={role.id} className="flex items-center justify-between p-2 border rounded">
-              <div className="flex items-center space-x-2">
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: role.color }}
-                />
-                <span className="text-sm">{role.name}</span>
-              </div>
-              <button
-                onClick={() => removeRole(role.id)}
-                className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
-              >
-                Remover
-              </button>
-            </div>
-          ))
-        )}
+        ))}
       </div>
     </div>
   );

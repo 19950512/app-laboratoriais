@@ -6,43 +6,54 @@ export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
-          {/* Logo e informações */}
-          <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-            <Building className="h-4 w-4" />
-            <span>LabManager © {currentYear}</span>
+    <footer className="bg-gray-900 text-gray-300 py-10">
+      <div className="container mx-auto px-6 lg:px-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Coluna 1 */}
+          <div>
+            <h3 className="text-xl font-bold text-white mb-4">Laboratoriais</h3>
+            <p className="text-sm text-gray-400">
+              Soluções inovadoras para gestão laboratorial. Transformando ideias em realidade.
+            </p>
           </div>
 
-          {/* Links úteis */}
-          <div className="flex items-center space-x-4 text-sm">
-            <a 
-              href="#"
-              className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              Ajuda
-            </a>
-            <a 
-              href="#"
-              className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              Suporte
-            </a>
-            <a 
-              href="#"
-              className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              Privacidade
-            </a>
+          {/* Coluna 2 */}
+          <div>
+            <h4 className="text-lg font-semibold text-white mb-4">Links Rápidos</h4>
+            <ul className="space-y-2">
+              <li>
+                <a href="#" className="hover:text-white transition">Política de Privacidade</a>
+              </li>
+              <li>
+                <a href="#" className="hover:text-white transition">Termos de Uso</a>
+              </li>
+              <li>
+                <a href="#" className="hover:text-white transition">Contato</a>
+              </li>
+            </ul>
           </div>
 
-          {/* Créditos */}
-          <div className="flex items-center space-x-1 text-sm text-gray-600 dark:text-gray-400">
-            <span>Feito com</span>
-            <Heart className="h-4 w-4 text-red-500" />
-            <span>para laboratórios</span>
+          {/* Coluna 3 */}
+          <div>
+            <h4 className="text-lg font-semibold text-white mb-4">Siga-nos</h4>
+            <div className="flex space-x-4">
+              <a href="#" className="text-gray-400 hover:text-white transition">
+                <i className="fab fa-facebook-f"></i>
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white transition">
+                <i className="fab fa-twitter"></i>
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white transition">
+                <i className="fab fa-instagram"></i>
+              </a>
+            </div>
           </div>
+        </div>
+
+        <div className="mt-10 border-t border-gray-700 pt-6 text-center">
+          <p className="text-sm text-gray-500">
+            © {currentYear} Laboratoriais. Todos os direitos reservados.
+          </p>
         </div>
       </div>
     </footer>

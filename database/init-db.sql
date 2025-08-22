@@ -3,10 +3,6 @@
 -- Arquivo de inicialização do banco de dados
 -- =====================================================
 
--- Recriar o esquema public para garantir um estado limpo
-DROP SCHEMA IF EXISTS public CASCADE;
-CREATE SCHEMA public;
-
 -- Habilitar extensões necessárias
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
@@ -43,14 +39,14 @@ CREATE TYPE ContextEnum AS ENUM (
 -- TABELA: business (Empresas/Tenants)
 -- =====================================================
 
-CREATE TABLE business (
+CREATE TABLE IF NOT EXISTS business (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
     document VARCHAR(20) UNIQUE NOT NULL, -- CPF/CNPJ
     logo VARCHAR(500), -- Caminho para o arquivo de logo
     active BOOLEAN NOT NULL DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL
 );
 
 -- Comentários para auxiliar entendimento
@@ -70,7 +66,7 @@ CREATE INDEX idx_business_name_trgm ON business USING gin(name gin_trgm_ops);
 -- TABELA: accounts (Usuários do sistema)
 -- =====================================================
 
-CREATE TABLE accounts (
+CREATE TABLE IF NOT EXISTS accounts (
     business_id UUID NOT NULL REFERENCES business(id) ON DELETE CASCADE,
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email VARCHAR(255) NOT NULL,
@@ -79,8 +75,8 @@ CREATE TABLE accounts (
     hash_password VARCHAR(255) NOT NULL,
     is_company_owner BOOLEAN NOT NULL DEFAULT false,
     active BOOLEAN NOT NULL DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL,
     
     -- Constraint para garantir unicidade de email por empresa
     CONSTRAINT unique_business_email UNIQUE (business_id, email)
@@ -106,15 +102,13 @@ CREATE INDEX idx_accounts_name_trgm ON accounts USING gin(name gin_trgm_ops);
 -- TABELA: account_preferences (Preferências do usuário)
 -- =====================================================
 
-CREATE TABLE account_preferences (
+CREATE TABLE IF NOT EXISTS account_preferences (
     business_id UUID NOT NULL REFERENCES business(id) ON DELETE CASCADE,
     account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
-    theme ThemeEnum NOT NULL DEFAULT 'light',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    
-    -- Constraint para garantir uma preferência por usuário
-    CONSTRAINT pk_account_preferences PRIMARY KEY (business_id, account_id)
+    theme theme_enum NOT NULL DEFAULT 'light',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (business_id, account_id)
 );
 
 -- Comentários
@@ -135,8 +129,8 @@ CREATE TABLE tokens_jwt (
     expire_in TIMESTAMP WITH TIME ZONE NOT NULL,
     token TEXT NOT NULL,
     active BOOLEAN NOT NULL DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL
 );
 
 -- Comentários
@@ -162,8 +156,8 @@ CREATE TABLE roles (
     name VARCHAR(100) NOT NULL,
     color VARCHAR(7) NOT NULL, -- Hex color format (#FFFFFF)
     active BOOLEAN NOT NULL DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL,
     
     -- Constraint para garantir unicidade de nome por empresa
     CONSTRAINT unique_business_role_name UNIQUE (business_id, name)
@@ -188,7 +182,7 @@ CREATE TABLE account_roles (
     business_id UUID NOT NULL REFERENCES business(id) ON DELETE CASCADE,
     account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
     role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     -- Constraint para garantir unicidade
     CONSTRAINT pk_account_roles PRIMARY KEY (business_id, account_id, role_id)
@@ -214,7 +208,7 @@ CREATE TABLE route_roles (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     route VARCHAR(100) NOT NULL,
     role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     -- Constraint para garantir unicidade de rota+cargo por empresa
     CONSTRAINT unique_business_route_role UNIQUE (business_id, route, role_id)
@@ -391,3 +385,13 @@ BEGIN
     RAISE NOTICE 'Role-based access control system implemented';
     RAISE NOTICE '========================================';
 END $$;
+
+-- Atualizações de enums
+ALTER TYPE context_enum ADD VALUE IF NOT EXISTS 'account_role_add';
+ALTER TYPE context_enum ADD VALUE IF NOT EXISTS 'account_role_remove';
+ALTER TYPE context_enum ADD VALUE IF NOT EXISTS 'role_create';
+ALTER TYPE context_enum ADD VALUE IF NOT EXISTS 'role_update';
+ALTER TYPE context_enum ADD VALUE IF NOT EXISTS 'role_delete';
+
+-- Remoção de índice
+DROP INDEX IF EXISTS account_preferences_account_id_key;

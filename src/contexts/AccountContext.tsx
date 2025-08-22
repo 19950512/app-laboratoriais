@@ -152,13 +152,13 @@ export function AccountProvider({ children }: AccountProviderProps): JSX.Element
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Login failed');
+        throw new Error(error.error || error.message || 'Login failed');
       }
 
       const result = await response.json();
       
       if (!result.success) {
-        throw new Error(result.error || 'Login failed');
+        throw new Error(result.error || result.message || 'Login failed');
       }
       
       // Armazenar token no cookie
