@@ -20,7 +20,7 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    const payload = await JwtService.verifyToken(token);
+    await JwtService.verifyToken(token);
     // Se tem token válido, permitir acesso
     // A verificação de permissões específicas é feita nas páginas
     return NextResponse.next();
