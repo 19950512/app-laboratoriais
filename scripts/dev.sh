@@ -26,6 +26,10 @@ sleep 10
 echo "🗄️ Executando migrações do banco..."
 docker compose -f docker-compose.dev.yml exec app npm run db:push
 
+# Gerar o Prisma Client no ambiente correto
+echo "⚙️ Gerando Prisma Client..."
+docker compose -f docker-compose.dev.yml exec app npx prisma generate
+
 echo "✅ Ambiente de desenvolvimento iniciado!"
 echo "🌐 Aplicação disponível em: http://localhost:3000"
 echo "🗄️ Banco de dados PostgreSQL: localhost:5432"
