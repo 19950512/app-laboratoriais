@@ -33,8 +33,8 @@ echo "✅ Serviço 'postgres' está ativo!"
 
 # Recriar o banco de dados
 echo "🗑️ Recriando banco de dados..."
-docker compose -f docker-compose.dev.yml run --rm db psql -U postgres -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
-docker compose -f docker-compose.dev.yml run --rm db psql -U postgres -f /docker-entrypoint-initdb.d/init-db.sql
+docker compose -f docker-compose.dev.yml exec db psql -U postgres -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+docker compose -f docker-compose.dev.yml exec db psql -U postgres -f /docker-entrypoint-initdb.d/init-db.sql
 
 # Executar reset do banco de dados com Prisma
 echo "🗄️ Resetando o banco de dados com Prisma..."
