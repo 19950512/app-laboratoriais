@@ -15,8 +15,8 @@ CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 -- ENUMS
 -- =====================================================
 
-CREATE TYPE theme_enum AS ENUM ('dark', 'light');
-CREATE TYPE context_enum AS ENUM (
+CREATE TYPE ThemeEnum AS ENUM ('dark', 'light');
+CREATE TYPE ContextEnum AS ENUM (
     'auth_login',
     'auth_logout', 
     'auth_recovery',
@@ -109,7 +109,7 @@ CREATE INDEX idx_accounts_name_trgm ON accounts USING gin(name gin_trgm_ops);
 CREATE TABLE account_preferences (
     business_id UUID NOT NULL REFERENCES business(id) ON DELETE CASCADE,
     account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
-    theme theme_enum NOT NULL DEFAULT 'light',
+    theme ThemeEnum NOT NULL DEFAULT 'light',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     
@@ -241,7 +241,7 @@ CREATE TABLE auditoria (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     account_id UUID REFERENCES accounts(id) ON DELETE SET NULL,
     description TEXT NOT NULL,
-    context context_enum NOT NULL,
+    context ContextEnum NOT NULL,
     moment TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     ip_address INET,
     user_agent TEXT,
