@@ -3,6 +3,10 @@
 -- Arquivo de inicialização do banco de dados
 -- =====================================================
 
+-- Recriar o esquema public para garantir um estado limpo
+DROP SCHEMA IF EXISTS public CASCADE;
+CREATE SCHEMA public;
+
 -- Habilitar extensões necessárias
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
@@ -326,22 +330,6 @@ BEGIN
     RETURN deleted_count;
 END;
 $$ LANGUAGE plpgsql;
-
--- =====================================================
--- DADOS INICIAIS (OPCIONAL)
--- =====================================================
-
--- Inserir empresa de exemplo (remover em produção se necessário)
-INSERT INTO business (name, document) VALUES 
-('Empresa Demo', '12345678000123');
-
--- Inserir usuário administrador de exemplo (senha: admin123)
-INSERT INTO accounts (business_id, name, email, hash_password, is_company_owner, active) VALUES 
-((SELECT id FROM business WHERE name = 'Empresa Demo'), 'Administrador', 'admin@demo.com', '$2a$10$TlijpJzISrjbDoO.7eRuLO79eUMiMU09OJMK2ppjQtI9HCLutJN8G', true, true);
-
--- Inserir preferências para o usuário administrador
-INSERT INTO account_preferences (business_id, account_id, theme) VALUES 
-((SELECT business_id FROM accounts WHERE email = 'admin@demo.com'), (SELECT id FROM accounts WHERE email = 'admin@demo.com'), 'light');
 
 -- =====================================================
 -- VIEWS ÚTEIS PARA CONSULTAS
