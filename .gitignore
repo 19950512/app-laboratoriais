@@ -38,7 +38,6 @@ yarn-error.log*
 next-env.d.ts
 
 # prisma
-prisma/migrations/
 
 # docker
 docker-compose.override.yml
