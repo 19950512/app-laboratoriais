@@ -1,0 +1,143 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ThemeEnum {
+  dark
+  light
+}
+
+enum ContextEnum {
+  auth_login
+  auth_logout
+  auth_recovery
+  auth_deny
+  auth_password_change
+  account_create
+  account_update
+  account_deactivate
+  business_create
+  business_update
+  profile_update
+  preferences_update
+  theme_change
+  session_create
+  session_revoke
+}
+
+model Business {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(255)
+  document  String   @unique @db.VarChar(20)
+  logo      String?  @db.VarChar(500)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  accounts            Account[]
+  accountPreferences  AccountPreference[]
+  tokensJwt          TokenJwt[]
+  auditoria          Auditoria[]
+
+  @@index([document])
+  @@index([active])
+  @@map("business")
+}
+
+model Account {
+  businessId   String   @map("business_id") @db.Uuid
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @db.VarChar(255)
+  name         String   @db.VarChar(255)
+  photoProfile String?  @map("photo_profile")
+  hashPassword String   @map("hash_password") @db.VarChar(255)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  business           Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  accountPreference  AccountPreference?
+  tokensJwt         TokenJwt[]
+  auditoria         Auditoria[]
+
+  @@unique([businessId, email], name: "unique_business_email")
+  @@index([businessId])
+  @@index([email])
+  @@index([businessId, email])
+  @@index([active])
+  @@map("accounts")
+}
+
+model AccountPreference {
+  businessId String    @map("business_id") @db.Uuid
+  accountId  String    @unique @map("account_id") @db.Uuid
+  theme      ThemeEnum @default(light)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  account  Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@id([businessId, accountId])
+  @@index([accountId])
+  @@map("account_preferences")
+}
+
+model TokenJwt {
+  businessId String   @map("business_id") @db.Uuid
+  id         String   @id @default(uuid()) @db.Uuid
+  accountId  String   @map("account_id") @db.Uuid
+  expireIn   DateTime @map("expire_in") @db.Timestamptz
+  token      String
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  account  Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([accountId])
+  @@index([active])
+  @@index([expireIn])
+  @@index([token], type: Hash)
+  @@map("tokens_jwt")
+}
+
+model Auditoria {
+  businessId     String      @map("business_id") @db.Uuid
+  id             String      @id @default(uuid()) @db.Uuid
+  accountId      String?     @map("account_id") @db.Uuid
+  description    String
+  context        ContextEnum
+  moment         DateTime    @default(now()) @db.Timestamptz
+  ipAddress      String?     @map("ip_address") @db.Inet
+  userAgent      String?     @map("user_agent")
+  additionalData Json?       @map("additional_data") @db.JsonB
+
+  // Relations
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  account  Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  @@index([businessId])
+  @@index([accountId])
+  @@index([context])
+  @@index([moment(sort: Desc)])
+  @@index([businessId, moment(sort: Desc)])
+  @@index([accountId, moment(sort: Desc)])
+  @@index([businessId, context, moment(sort: Desc)])
+  @@map("auditoria")
+}

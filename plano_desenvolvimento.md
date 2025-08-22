@@ -5,6 +5,16 @@ O sistema será multitanance, ou seja, 1 instância do banco de dados (Postgres)
 
 As colunas a seguir, são básicas e posteriormente sofrerão alterações.
 
+# Tecnologias
+- Next.js 15 (latest)
+    - Tailwind CSS
+- TypeScript
+- Prisma (ORM)
+- PostgreSQL
+- Redis
+- Docker
+- Nginx
+
 ### Crie um init-db.sql
 #### Tabelas
 
@@ -49,7 +59,6 @@ As colunas a seguir, são básicas e posteriormente sofrerão alterações.
 OBS:
 - crie índices para o banco de dados focando na performance!
 - crie comentários para auxiliar o entendimento
-
 
 ### Segurança
 Implemente autenticação e autorização robustas, utilizando JWT para gerenciar sessões de usuários. Assegure-se de que todas as rotas estejam protegidas e que apenas usuários autenticados possam acessá-las.
@@ -104,3 +113,4 @@ Ao fazer o login, o sistema identifica as preferências do usuário e ajusta o l
 # OBS:
 Cada ação do usuário deverá salvar um "evento" na tabela "auditoria" com account_id, nome do usuário no momento, oque ele está fazendo, quando foi, etc.
 
+O projeto deve rodar neste diretório mesmo!
