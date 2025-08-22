@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import { JwtService } from '../../../../lib/jwt';
 import { validate, updatePreferencesSchema } from '../../../../utils/validation';
-import { ContextEnum } from '@/types';
+import { ContextEnum } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     let decoded;
     
     try {
-      decoded = JwtService.verifyToken(token);
+      decoded = await JwtService.verifyToken(token);
     } catch (error) {
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }
@@ -83,7 +83,7 @@ export async function PUT(request: NextRequest) {
     let decoded;
     
     try {
-      decoded = JwtService.verifyToken(token);
+      decoded = await JwtService.verifyToken(token);
     } catch (error) {
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }
@@ -155,7 +155,7 @@ export async function PUT(request: NextRequest) {
         data: {
           businessId: decoded.businessId,
           accountId: decoded.accountId,
-          context: ContextEnum.THEME_CHANGE,
+          context: ContextEnum.theme_change,
           description: `Tema alterado para: ${theme}`,
           additionalData: { 
             previousTheme: currentPreferences?.theme || null,

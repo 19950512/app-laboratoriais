@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     let decoded;
     
     try {
-      decoded = JwtService.verifyToken(token);
+      decoded = await JwtService.verifyToken(token);
     } catch (error) {
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
     let decoded;
     
     try {
-      decoded = JwtService.verifyToken(token);
+      decoded = await JwtService.verifyToken(token);
     } catch (error) {
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }

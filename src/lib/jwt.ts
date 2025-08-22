@@ -1,8 +1,9 @@
 // @ts-nocheck
-import jsonwebtoken from 'jsonwebtoken';
+import { SignJWT, jwtVerify } from 'jose';
 import { Account, Business, AccountPreference } from '@/types';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key';
+const JWT_SECRET_KEY = new TextEncoder().encode(JWT_SECRET);
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 export interface JwtPayload {
@@ -23,16 +24,17 @@ export class JwtService {
   /**
    * Gera um token JWT para o usuário
    */
-  static generateToken(payload: Omit<JwtPayload, 'iat' | 'exp'>): string {
+  static async generateToken(payload: Omit<JwtPayload, 'iat' | 'exp'>): Promise<string> {
     try {
-      return jsonwebtoken.sign(
-        payload,
-        JWT_SECRET,
-        {
-          expiresIn: JWT_EXPIRES_IN,
-          algorithm: 'HS256',
-        }
-      );
+      const expirationTime = JWT_EXPIRES_IN === '7d' ? '7d' : JWT_EXPIRES_IN;
+      
+      const jwt = await new SignJWT(payload)
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime(expirationTime)
+        .sign(JWT_SECRET_KEY);
+        
+      return jwt;
     } catch (error) {
       console.error('Error generating JWT token:', error);
       throw new Error('Failed to generate authentication token');
@@ -42,19 +44,22 @@ export class JwtService {
   /**
    * Verifica e decodifica um token JWT
    */
-  static verifyToken(token: string): JwtPayload {
+  static async verifyToken(token: string): Promise<JwtPayload> {
     try {
-      const decoded = jsonwebtoken.verify(token, JWT_SECRET, {
+      
+      const { payload } = await jwtVerify(token, JWT_SECRET_KEY, {
         algorithms: ['HS256'],
-      }) as JwtPayload;
+      });
 
-      return decoded;
+      return payload as JwtPayload;
     } catch (error) {
-      if (error instanceof jsonwebtoken.TokenExpiredError) {
-        throw new Error('Token expired');
-      }
-      if (error instanceof jsonwebtoken.JsonWebTokenError) {
-        throw new Error('Invalid token');
+      if (error instanceof Error) {
+        if (error.message.includes('expired')) {
+          throw new Error('Token expired');
+        }
+        if (error.message.includes('invalid')) {
+          throw new Error('Invalid token');
+        }
       }
       console.error('JWT verification error:', error);
       throw new Error('Token verification failed');
@@ -66,7 +71,14 @@ export class JwtService {
    */
   static decodeToken(token: string): JwtPayload | null {
     try {
-      return jsonwebtoken.decode(token) as JwtPayload;
+      // Decodifica o payload sem verificar a assinatura
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        throw new Error('Invalid token format');
+      }
+      
+      const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+      return payload as JwtPayload;
     } catch (error) {
       console.error('JWT decode error:', error);
       return null;
@@ -105,9 +117,14 @@ export class JwtService {
   /**
    * Gera um hash do token para armazenamento seguro
    */
-  static hashToken(token: string): string {
-    const crypto = require('crypto');
-    return crypto.createHash('sha256').update(token).digest('hex');
+  static async hashToken(token: string): Promise<string> {
+    // Usar Web Crypto API que é compatível com Edge Runtime
+    const encoder = new TextEncoder();
+    const data = encoder.encode(token);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
   }
 
   /**

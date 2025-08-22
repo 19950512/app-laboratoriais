@@ -83,7 +83,7 @@ export function BusinessProvider({ children }: BusinessProviderProps): JSX.Eleme
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
+        await response.text(); // Consumir resposta para evitar leak
         throw new Error('Failed to fetch business data');
       }
 

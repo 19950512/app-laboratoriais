@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { withErrorHandler, validateMethod, methodNotAllowed, successResponse, authenticate } from '@/middleware/auth';
+import { withErrorHandler, validateMethod, methodNotAllowed, successResponse, authenticate } from '@/lib/auth';
 import { ThemeEnum } from '@/types';
 
 async function meHandler(request: NextRequest): Promise<NextResponse> {
@@ -26,7 +26,7 @@ async function meHandler(request: NextRequest): Promise<NextResponse> {
       },
       include: {
         business: true,
-        accountPreference: true,
+        accountPreferences: true,
       },
     });
 
@@ -38,7 +38,7 @@ async function meHandler(request: NextRequest): Promise<NextResponse> {
     }
 
     // Criar preferências padrão se não existir
-    let preferences = account.accountPreference;
+    let preferences = account.accountPreferences[0];
     if (!preferences) {
       preferences = await prisma.accountPreference.create({
         data: {

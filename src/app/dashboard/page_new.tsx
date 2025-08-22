@@ -4,14 +4,11 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAccount } from '../../contexts/AccountContext';
 import { AppLayout } from '../../components/layout';
-import { Loader2, User, Building, Settings, Users, Activity, BarChart3 } from 'lucide-react';
+import { Loader2, User, Building, Users, Activity, BarChart3 } from 'lucide-react';
 
 export default function DashboardPage(): JSX.Element {
-  const { account, preferences, isAuthenticated, isLoading, logout } = useAccount();
+  const { account, isAuthenticated, isLoading } = useAccount();
   const router = useRouter();
-
-  console.log('🏢 Dashboard render - Account:', account);
-  console.log('🔐 Dashboard render - Is Authenticated:', isAuthenticated);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {

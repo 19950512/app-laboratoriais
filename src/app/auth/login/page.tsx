@@ -26,10 +26,10 @@ export default function LoginPage(): JSX.Element {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !isLoading) {
       router.push('/dashboard');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isLoading, router]);
 
   // Verificar se há mensagem na URL
   useEffect(() => {
@@ -60,6 +60,13 @@ export default function LoginPage(): JSX.Element {
 
     try {
       await login(formData);
+      addToast({
+        type: 'success',
+        title: 'Login realizado com sucesso!',
+        message: 'Redirecionando para o dashboard...',
+        duration: 3000
+      });
+      
     } catch (err) {
       addToast({
         type: 'error',

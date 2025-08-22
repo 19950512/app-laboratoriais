@@ -145,9 +145,60 @@ export function withErrorHandler(handler: (request: NextRequest, context?: any) 
   };
 }
 
-export function rateLimit() {
-  // Implementação simples de rate limiting
-  return true; // Por enquanto sempre permite
+interface RateLimitOptions {
+  limit: number;
+  windowSeconds: number;
+}
+
+const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
+
+export async function rateLimit(
+  request: NextRequest, 
+  options: RateLimitOptions = { limit: 10, windowSeconds: 60 }
+): Promise<{ success: boolean; error?: string }> {
+  // Em desenvolvimento, ser mais permissivo
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const limit = isDevelopment ? options.limit * 10 : options.limit; // 10x mais permissivo em dev
+  
+  // Obter IP do cliente
+  const ip = request.headers.get('x-forwarded-for') || 
+             request.headers.get('x-real-ip') || 
+             'unknown';
+  
+  const key = `rate_limit:${ip}`;
+  const now = Date.now();
+  const windowMs = options.windowSeconds * 1000;
+  
+  const existing = rateLimitStore.get(key);
+  
+  if (existing) {
+    if (now < existing.resetTime) {
+      if (existing.count >= limit) {
+        return {
+          success: false,
+          error: `Rate limit exceeded. Try again in ${Math.ceil((existing.resetTime - now) / 1000)} seconds.`
+        };
+      }
+      existing.count++;
+    } else {
+      // Janela expirou, resetar
+      rateLimitStore.set(key, { count: 1, resetTime: now + windowMs });
+    }
+  } else {
+    // Primeira requisição
+    rateLimitStore.set(key, { count: 1, resetTime: now + windowMs });
+  }
+  
+  // Limpar entradas antigas periodicamente (cleanup simples)
+  if (Math.random() < 0.01) { // 1% de chance
+    for (const [k, v] of rateLimitStore.entries()) {
+      if (now > v.resetTime) {
+        rateLimitStore.delete(k);
+      }
+    }
+  }
+  
+  return { success: true };
 }
 
 export async function logAuditoria(

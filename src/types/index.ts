@@ -16,6 +16,7 @@ export interface Account {
   photoProfile?: string;
   hashPassword: string;
   active: boolean;
+  isCompanyOwner: boolean;
   createdAt: Date;
   updatedAt: Date;
   business?: Business;
@@ -73,6 +74,8 @@ export enum ContextEnum {
   ACCOUNT_CREATE = 'account_create',
   ACCOUNT_UPDATE = 'account_update',
   ACCOUNT_DEACTIVATE = 'account_deactivate',
+  ACCOUNT_ROLE_ADD = 'account_role_add',
+  ACCOUNT_ROLE_REMOVE = 'account_role_remove',
   BUSINESS_CREATE = 'business_create',
   BUSINESS_UPDATE = 'business_update',
   PROFILE_UPDATE = 'profile_update',
@@ -80,6 +83,9 @@ export enum ContextEnum {
   THEME_CHANGE = 'theme_change',
   SESSION_CREATE = 'session_create',
   SESSION_REVOKE = 'session_revoke',
+  ROLE_CREATE = 'role_create',
+  ROLE_UPDATE = 'role_update',
+  ROLE_DELETE = 'role_delete',
 }
 
 // DTOs para requests/responses

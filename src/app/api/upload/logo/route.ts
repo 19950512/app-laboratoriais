@@ -16,10 +16,9 @@ export async function POST(request: NextRequest) {
     }
 
     const token = authHeader.substring(7);
-    let decoded;
     
     try {
-      decoded = JwtService.verifyToken(token);
+      JwtService.verifyToken(token);
     } catch (error) {
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }

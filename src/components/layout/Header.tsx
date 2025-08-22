@@ -1,14 +1,14 @@
 'use client';
 
-import { ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAccount } from '../../contexts/AccountContext';
 import { useBusiness } from '../../contexts/BusinessContext';
+import { useAccessibleRoutes } from '../../hooks/useAccessibleRoutes';
 import { useTheme } from 'next-themes';
+import { ThemeEnum } from '../../types';
 import { 
   User, 
   Building,
-  Settings,
   LogOut,
   Sun,
   Moon,
@@ -24,12 +24,42 @@ interface HeaderProps {
   backUrl?: string;
 }
 
-export function Header({ title, subtitle, showBackButton = false, backUrl }: HeaderProps) {
+export function Header({ title, subtitle }: HeaderProps) {
   const { account, logout, updatePreferences } = useAccount();
   const { business } = useBusiness();
   const { theme, setTheme } = useTheme();
+  const { canAccess } = useAccessibleRoutes();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Definir itens de navegação
+  const navigationItems = [
+    { 
+      label: 'Dashboard', 
+      route: '/dashboard', 
+      always: false // Será verificado pelas permissões
+    },
+    { 
+      label: 'Perfil', 
+      route: '/profile', 
+      always: true // Sempre acessível
+    },
+    { 
+      label: 'Auditoria', 
+      route: '/audit-logs', 
+      always: false
+    },
+    { 
+      label: 'Admin Empresa', 
+      route: '/business-admin', 
+      always: false
+    }
+  ];
+
+  // Filtrar itens baseado nas permissões
+  const accessibleItems = navigationItems.filter(item => 
+    item.always || canAccess(item.route)
+  );
 
   const handleNavigation = (url: string) => {
     router.push(url);
@@ -45,7 +75,9 @@ export function Header({ title, subtitle, showBackButton = false, backUrl }: Hea
       setTheme(newTheme);
       
       // Persistir no backend
-      await updatePreferences({ theme: newTheme as 'light' | 'dark' });
+      await updatePreferences({ 
+        theme: newTheme === 'light' ? ThemeEnum.LIGHT : ThemeEnum.DARK 
+      });
     } catch (error) {
       console.error('Erro ao atualizar tema:', error);
       // Reverter mudança local em caso de erro
@@ -104,30 +136,15 @@ export function Header({ title, subtitle, showBackButton = false, backUrl }: Hea
           <div className="hidden md:flex items-center space-x-4">
             {/* Navegação */}
             <nav className="flex items-center space-x-2">
-              <button
-                onClick={() => handleNavigation('/dashboard')}
-                className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
-              >
-                Dashboard
-              </button>
-              <button
-                onClick={() => handleNavigation('/profile')}
-                className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
-              >
-                Perfil
-              </button>
-              <button
-                onClick={() => handleNavigation('/audit-logs')}
-                className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
-              >
-                Auditoria
-              </button>
-              <button
-                onClick={() => handleNavigation('/business-admin')}
-                className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
-              >
-                Admin Empresa
-              </button>
+              {accessibleItems.map((item) => (
+                <button
+                  key={item.route}
+                  onClick={() => handleNavigation(item.route)}
+                  className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                >
+                  {item.label}
+                </button>
+              ))}
             </nav>
 
             {/* Toggle tema */}
@@ -212,30 +229,15 @@ export function Header({ title, subtitle, showBackButton = false, backUrl }: Hea
 
               {/* Navigation */}
               <div className="space-y-1">
-                <button
-                  onClick={() => handleNavigation('/dashboard')}
-                  className="w-full text-left px-2 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
-                >
-                  Dashboard
-                </button>
-                <button
-                  onClick={() => handleNavigation('/profile')}
-                  className="w-full text-left px-2 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
-                >
-                  Perfil
-                </button>
-                <button
-                  onClick={() => handleNavigation('/audit-logs')}
-                  className="w-full text-left px-2 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
-                >
-                  Auditoria
-                </button>
-                <button
-                  onClick={() => handleNavigation('/business-admin')}
-                  className="w-full text-left px-2 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
-                >
-                  Admin Empresa
-                </button>
+                {accessibleItems.map((item) => (
+                  <button
+                    key={item.route}
+                    onClick={() => handleNavigation(item.route)}
+                    className="w-full text-left px-2 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                  >
+                    {item.label}
+                  </button>
+                ))}
               </div>
 
               {/* Actions */}

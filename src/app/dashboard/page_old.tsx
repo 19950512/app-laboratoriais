@@ -13,11 +13,6 @@ export default function DashboardPage(): JSX.Element {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
 
-  console.log('🏢 Dashboard render - Business:', business);
-  console.log('⏳ Dashboard render - Business Loading:', businessLoading);
-  console.log('👤 Dashboard render - Account:', account);
-  console.log('🔐 Dashboard render - Is Authenticated:', isAuthenticated);
-
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push('/auth/login');

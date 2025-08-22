@@ -21,13 +21,18 @@ CREATE TYPE context_enum AS ENUM (
     'account_create',
     'account_update',
     'account_deactivate',
+    'account_role_add',
+    'account_role_remove',
     'business_create',
     'business_update',
     'profile_update',
     'preferences_update',
     'theme_change',
     'session_create',
-    'session_revoke'
+    'session_revoke',
+    'role_create',
+    'role_update',
+    'role_delete'
 );
 
 -- =====================================================
@@ -68,6 +73,7 @@ CREATE TABLE accounts (
     name VARCHAR(255) NOT NULL,
     photo_profile TEXT,
     hash_password VARCHAR(255) NOT NULL,
+    is_company_owner BOOLEAN NOT NULL DEFAULT false,
     active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -82,12 +88,14 @@ COMMENT ON COLUMN accounts.business_id IS 'ID da empresa à qual o usuário pert
 COMMENT ON COLUMN accounts.email IS 'Email do usuário (único por empresa)';
 COMMENT ON COLUMN accounts.hash_password IS 'Hash da senha do usuário (bcrypt/Argon2)';
 COMMENT ON COLUMN accounts.photo_profile IS 'URL ou path da foto de perfil';
+COMMENT ON COLUMN accounts.is_company_owner IS 'Indica se o usuário é o criador/dono da empresa';
 
 -- Índices para performance
 CREATE INDEX idx_accounts_business_id ON accounts(business_id);
 CREATE INDEX idx_accounts_email ON accounts(email);
 CREATE INDEX idx_accounts_business_email ON accounts(business_id, email);
 CREATE INDEX idx_accounts_active ON accounts(active);
+CREATE INDEX idx_accounts_is_company_owner ON accounts(is_company_owner);
 CREATE INDEX idx_accounts_name_trgm ON accounts USING gin(name gin_trgm_ops);
 
 -- =====================================================
@@ -139,6 +147,86 @@ CREATE INDEX idx_tokens_account_id ON tokens_jwt(account_id);
 CREATE INDEX idx_tokens_active ON tokens_jwt(active);
 CREATE INDEX idx_tokens_expire_in ON tokens_jwt(expire_in);
 CREATE INDEX idx_tokens_token_hash ON tokens_jwt USING hash(token);
+
+-- =====================================================
+-- TABELA: roles (Cargos do sistema)
+-- =====================================================
+
+CREATE TABLE roles (
+    business_id UUID NOT NULL REFERENCES business(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(100) NOT NULL,
+    color VARCHAR(7) NOT NULL, -- Hex color format (#FFFFFF)
+    active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Constraint para garantir unicidade de nome por empresa
+    CONSTRAINT unique_business_role_name UNIQUE (business_id, name)
+);
+
+-- Comentários
+COMMENT ON TABLE roles IS 'Cargos/funções definidos por empresa para controle de acesso';
+COMMENT ON COLUMN roles.business_id IS 'ID da empresa à qual o cargo pertence';
+COMMENT ON COLUMN roles.name IS 'Nome do cargo (único por empresa)';
+COMMENT ON COLUMN roles.color IS 'Cor do cargo em formato hexadecimal (#FFFFFF)';
+COMMENT ON COLUMN roles.active IS 'Indica se o cargo está ativo no sistema';
+
+-- Índices para performance
+CREATE INDEX idx_roles_business_id ON roles(business_id);
+CREATE INDEX idx_roles_active ON roles(active);
+
+-- =====================================================
+-- TABELA: account_roles (Cargos atribuídos aos usuários)
+-- =====================================================
+
+CREATE TABLE account_roles (
+    business_id UUID NOT NULL REFERENCES business(id) ON DELETE CASCADE,
+    account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Constraint para garantir unicidade
+    CONSTRAINT pk_account_roles PRIMARY KEY (business_id, account_id, role_id)
+);
+
+-- Comentários
+COMMENT ON TABLE account_roles IS 'Relação many-to-many entre usuários e cargos';
+COMMENT ON COLUMN account_roles.business_id IS 'ID da empresa (para particionamento)';
+COMMENT ON COLUMN account_roles.account_id IS 'ID do usuário que possui o cargo';
+COMMENT ON COLUMN account_roles.role_id IS 'ID do cargo atribuído ao usuário';
+
+-- Índices para performance
+CREATE INDEX idx_account_roles_account_id ON account_roles(account_id);
+CREATE INDEX idx_account_roles_role_id ON account_roles(role_id);
+CREATE INDEX idx_account_roles_business_account ON account_roles(business_id, account_id);
+
+-- =====================================================
+-- TABELA: route_roles (Cargos necessários para acessar rotas)
+-- =====================================================
+
+CREATE TABLE route_roles (
+    business_id UUID NOT NULL REFERENCES business(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    route VARCHAR(100) NOT NULL,
+    role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Constraint para garantir unicidade de rota+cargo por empresa
+    CONSTRAINT unique_business_route_role UNIQUE (business_id, route, role_id)
+);
+
+-- Comentários
+COMMENT ON TABLE route_roles IS 'Define quais cargos podem acessar cada rota do sistema';
+COMMENT ON COLUMN route_roles.business_id IS 'ID da empresa (para particionamento)';
+COMMENT ON COLUMN route_roles.route IS 'Rota/página que requer o cargo (ex: /dashboard)';
+COMMENT ON COLUMN route_roles.role_id IS 'ID do cargo que pode acessar a rota';
+
+-- Índices para performance
+CREATE INDEX idx_route_roles_business_id ON route_roles(business_id);
+CREATE INDEX idx_route_roles_role_id ON route_roles(role_id);
+CREATE INDEX idx_route_roles_route ON route_roles(route);
+CREATE INDEX idx_route_roles_business_route ON route_roles(business_id, route);
 
 -- =====================================================
 -- TABELA: auditoria (Log de ações dos usuários)
@@ -206,6 +294,10 @@ CREATE TRIGGER update_tokens_jwt_updated_at
     BEFORE UPDATE ON tokens_jwt 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_roles_updated_at 
+    BEFORE UPDATE ON roles 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- =====================================================
 -- FUNCTION PARA LIMPEZA AUTOMÁTICA DE TOKENS EXPIRADOS
 -- =====================================================
@@ -244,8 +336,8 @@ INSERT INTO business (name, document) VALUES
 ('Empresa Demo', '12345678000123');
 
 -- Inserir usuário administrador de exemplo (senha: admin123)
-INSERT INTO accounts (business_id, name, email, hash_password, active) VALUES 
-((SELECT id FROM business WHERE name = 'Empresa Demo'), 'Administrador', 'admin@demo.com', '$2a$10$TlijpJzISrjbDoO.7eRuLO79eUMiMU09OJMK2ppjQtI9HCLutJN8G', true);
+INSERT INTO accounts (business_id, name, email, hash_password, is_company_owner, active) VALUES 
+((SELECT id FROM business WHERE name = 'Empresa Demo'), 'Administrador', 'admin@demo.com', '$2a$10$TlijpJzISrjbDoO.7eRuLO79eUMiMU09OJMK2ppjQtI9HCLutJN8G', true, true);
 
 -- Inserir preferências para o usuário administrador
 INSERT INTO account_preferences (business_id, account_id, theme) VALUES 
@@ -264,6 +356,7 @@ SELECT
     a.email,
     a.name,
     a.photo_profile,
+    a.is_company_owner,
     a.active,
     a.created_at,
     ap.theme
@@ -303,9 +396,10 @@ BEGIN
     RAISE NOTICE '========================================';
     RAISE NOTICE 'Database setup completed successfully!';
     RAISE NOTICE '========================================';
-    RAISE NOTICE 'Tables created: business, accounts, account_preferences, tokens_jwt, auditoria';
+    RAISE NOTICE 'Tables created: business, accounts, account_preferences, tokens_jwt, roles, account_roles, route_roles, auditoria';
     RAISE NOTICE 'Views created: v_active_users, v_active_sessions';
     RAISE NOTICE 'Indexes created for optimal performance';
     RAISE NOTICE 'Triggers set for automatic updated_at management';
+    RAISE NOTICE 'Role-based access control system implemented';
     RAISE NOTICE '========================================';
 END $$;

@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { JwtService } from '@/lib/jwt';
 import { PasswordService } from '@/utils/crypto';
 import { validate, loginSchema } from '@/utils/validation';
-import { withErrorHandler, validateMethod, methodNotAllowed, successResponse, errorResponse, rateLimit, logAuditoria } from '@/middleware/auth';
+import { withErrorHandler, validateMethod, methodNotAllowed, successResponse, errorResponse, rateLimit, logAuditoria } from '@/lib/auth';
 import { ContextEnum, ThemeEnum } from '@/types';
 
 async function loginHandler(request: NextRequest): Promise<NextResponse> {
@@ -27,7 +27,7 @@ async function loginHandler(request: NextRequest): Promise<NextResponse> {
   // Validar dados de entrada
   const validation = validate(loginSchema, body);
   if (validation.error) {
-    return errorResponse('Dados inválidos', 400, validation.error.details);
+    return errorResponse('Dados inválidos', 400);
   }
 
   const { email, password } = validation.data;
@@ -44,7 +44,7 @@ async function loginHandler(request: NextRequest): Promise<NextResponse> {
       },
       include: {
         business: true,
-        accountPreference: true,
+        accountPreferences: true,
       },
     });
 
@@ -60,20 +60,21 @@ async function loginHandler(request: NextRequest): Promise<NextResponse> {
     
     if (!passwordValid) {
       // Log de tentativa de login com senha incorreta
-      await logAuditoria({
-        businessId: account.businessId,
-        accountId: account.id,
-        description: `Tentativa de login com senha incorreta para: ${email}`,
-        context: ContextEnum.AUTH_DENY,
-        request,
-        additionalData: { email },
-      });
+      await logAuditoria(
+        account.businessId,
+        account.id,
+        ContextEnum.AUTH_DENY,
+        `Tentativa de login com senha incorreta para: ${email}`,
+        request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+        request.headers.get('user-agent') || undefined,
+        { email }
+      );
 
       return errorResponse('Email ou senha incorretos', 401);
     }
 
     // Gerar token JWT
-    const token = JwtService.generateToken({
+    const token = await JwtService.generateToken({
       accountId: account.id,
       businessId: account.businessId,
       email: account.email,
@@ -90,14 +91,14 @@ async function loginHandler(request: NextRequest): Promise<NextResponse> {
       data: {
         businessId: account.businessId,
         accountId: account.id,
-        token: JwtService.hashToken(token),
+        token: await JwtService.hashToken(token),
         expireIn: tokenExpiration,
         active: true,
       },
     });
 
     // Criar preferências padrão se não existir
-    let preferences = account.accountPreference;
+    let preferences = account.accountPreferences[0];
     if (!preferences) {
       preferences = await prisma.accountPreference.create({
         data: {
@@ -109,17 +110,18 @@ async function loginHandler(request: NextRequest): Promise<NextResponse> {
     }
 
     // Log de login bem-sucedido
-    await logAuditoria({
-      businessId: account.businessId,
-      accountId: account.id,
-      description: `Login realizado com sucesso`,
-      context: ContextEnum.AUTH_LOGIN,
-      request,
-      additionalData: {
+    await logAuditoria(
+      account.businessId,
+      account.id,
+      ContextEnum.AUTH_LOGIN,
+      `Login realizado com sucesso`,
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+      request.headers.get('user-agent') || undefined,
+      {
         email: account.email,
         name: account.name,
-      },
-    });
+      }
+    );
 
     // Remover senha do retorno
     const { hashPassword, ...accountData } = account;

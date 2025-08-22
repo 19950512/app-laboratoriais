@@ -5,6 +5,7 @@ import { useAccount } from '../../contexts/AccountContext';
 import { useToast } from '../../components/ui/Toast';
 import { AppLayout } from '../../components/layout';
 import { ProfileImageUpload } from '../../components/ui/ProfileImageUpload';
+import { getCookie } from 'cookies-next';
 import { 
   User, 
   Mail, 
@@ -32,7 +33,9 @@ export default function ProfilePage(): JSX.Element {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState<'info' | 'password'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'password' | 'roles'>('info');
+  const [userRoles, setUserRoles] = useState<any[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
 
   useEffect(() => {
     if (account && !isSubmitting) {
@@ -44,6 +47,35 @@ export default function ProfilePage(): JSX.Element {
       }));
     }
   }, [account, isSubmitting]);
+
+  const loadUserRoles = async () => {
+    if (!account?.id) return;
+    
+    setRolesLoading(true);
+    try {
+      const token = getCookie('auth-token');
+      const response = await fetch(`/api/users/${account.id}/roles`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUserRoles(data.data.roles);
+      }
+    } catch (error) {
+      console.error('Error loading user roles:', error);
+    } finally {
+      setRolesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'roles' && account?.id) {
+      loadUserRoles();
+    }
+  }, [activeTab, account?.id]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -197,6 +229,16 @@ export default function ProfilePage(): JSX.Element {
               >
                 Alterar Senha
               </button>
+              <button
+                onClick={() => setActiveTab('roles')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'roles'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                }`}
+              >
+                Meus Cargos
+              </button>
             </nav>
           </div>
 
@@ -239,6 +281,36 @@ export default function ProfilePage(): JSX.Element {
                   </div>
                 </div>
 
+                {/* Status de Owner */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Status da conta
+                  </label>
+                  <div className="flex items-center space-x-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
+                    {account.isCompanyOwner ? (
+                      <>
+                        <div className="h-3 w-3 bg-green-500 rounded-full"></div>
+                        <span className="text-sm font-medium text-green-700 dark:text-green-400">
+                          Proprietário da Empresa
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          Você tem acesso total ao sistema
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="h-3 w-3 bg-blue-500 rounded-full"></div>
+                        <span className="text-sm font-medium text-blue-700 dark:text-blue-400">
+                          Funcionário
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          Acesso baseado nos seus cargos
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
                 {/* Upload da Foto */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -251,7 +323,7 @@ export default function ProfilePage(): JSX.Element {
                   />
                 </div>
               </div>
-            ) : (
+            ) : activeTab === 'password' ? (
               <div className="space-y-6">
                 {/* Senha Atual */}
                 <div>
@@ -331,7 +403,53 @@ export default function ProfilePage(): JSX.Element {
                   </div>
                 </div>
               </div>
-            )}
+            ) : activeTab === 'roles' ? (
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    Seus Cargos
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Cargos e funções atribuídos à sua conta
+                  </p>
+                </div>
+
+                {rolesLoading ? (
+                  <div className="flex justify-center items-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                    <span className="ml-2 text-gray-500">Carregando cargos...</span>
+                  </div>
+                ) : userRoles.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
+                      <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500 dark:text-gray-400">
+                        Nenhum cargo atribuído ainda
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {userRoles.map((role) => (
+                      <div key={role.id} className="flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div
+                          className="w-4 h-4 rounded-full mr-3"
+                          style={{ backgroundColor: role.color }}
+                        />
+                        <div className="flex-1">
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                            {role.name}
+                          </h4>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Atribuído em {new Date(role.createdAt).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : null}
 
             {/* Botão de Submit */}
             <div className="mt-8 flex justify-end">

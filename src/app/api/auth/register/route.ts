@@ -81,6 +81,7 @@ async function registerHandler(request: NextRequest): Promise<NextResponse> {
           email: body.email,
           name: body.name,
           hashPassword: hashedPassword,
+          isCompanyOwner: true, // Primeiro usuário é sempre o dono da empresa
           active: true,
         },
       });

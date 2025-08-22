@@ -14,15 +14,6 @@ const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   compress: true,
-  experimental: {
-    serverComponentsExternalPackages: ['@prisma/client'],
-  },
-  // Configuração para uploads
-  api: {
-    bodyParser: {
-      sizeLimit: '10mb',
-    },
-  },
   async headers() {
     return [
       {

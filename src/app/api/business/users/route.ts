@@ -39,35 +39,35 @@ const createUserSchema = Joi.object({
 });
 
 // Schema para atualização de usuário
-const updateUserSchema = Joi.object({
-  name: Joi.string()
-    .min(2)
-    .max(255)
-    .trim()
-    .optional()
-    .messages({
-      'string.min': 'Nome deve ter pelo menos 2 caracteres',
-      'string.max': 'Nome deve ter no máximo 255 caracteres',
-    }),
-  email: Joi.string()
-    .email({ tlds: { allow: false } })
-    .max(255)
-    .optional()
-    .messages({
-      'string.email': 'Email deve ter um formato válido',
-      'string.max': 'Email deve ter no máximo 255 caracteres',
-    }),
-  active: Joi.boolean()
-    .optional(),
-  password: Joi.string()
-    .min(6)
-    .max(128)
-    .optional()
-    .messages({
-      'string.min': 'Senha deve ter pelo menos 6 caracteres',
-      'string.max': 'Senha deve ter no máximo 128 caracteres',
-    }),
-});
+// const updateUserSchema = Joi.object({
+//   name: Joi.string()
+//     .min(2)
+//     .max(255)
+//     .trim()
+//     .optional()
+//     .messages({
+//       'string.min': 'Nome deve ter pelo menos 2 caracteres',
+//       'string.max': 'Nome deve ter no máximo 255 caracteres',
+//     }),
+//   email: Joi.string()
+//     .email({ tlds: { allow: false } })
+//     .max(255)
+//     .optional()
+//     .messages({
+//       'string.email': 'Email deve ter um formato válido',
+//       'string.max': 'Email deve ter no máximo 255 caracteres',
+//     }),
+//   active: Joi.boolean()
+//     .optional(),
+//   password: Joi.string()
+//     .min(6)
+//     .max(128)
+//     .optional()
+//     .messages({
+//       'string.min': 'Senha deve ter pelo menos 6 caracteres',
+//       'string.max': 'Senha deve ter no máximo 128 caracteres',
+//     }),
+// });
 
 export async function GET(request: NextRequest) {
   try {
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
     let decoded;
     
     try {
-      decoded = JwtService.verifyToken(token);
+      decoded = await JwtService.verifyToken(token);
     } catch (error) {
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
     let decoded;
     
     try {
-      decoded = JwtService.verifyToken(token);
+      decoded = await JwtService.verifyToken(token);
     } catch (error) {
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }
