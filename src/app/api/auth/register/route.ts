@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/prisma';
 import bcrypt from 'bcryptjs';
-import { ContextEnum } from '@/types';
+import { Bank, ContextEnum } from '@/types';
 
 async function registerHandler(request: NextRequest): Promise<NextResponse> {
   if (request.method !== 'POST') {
@@ -95,6 +95,21 @@ async function registerHandler(request: NextRequest): Promise<NextResponse> {
         },
       });
 
+
+      // Criar conta bancaria padrão
+      const contaBancaria = await tx.bankAccount.create({
+        data: {
+          businessId: business.id,
+          nameAccountBank: "Conta Padrão",
+          bankName: Bank.INTER,
+          certificatePublic: "",
+          certificatePrivate: "",
+          clientId: "",
+          secretId: "",
+          active: false,
+        },
+      });
+
       // Log de auditoria para criação da empresa
       await tx.auditoria.create({
         data: {
@@ -125,7 +140,22 @@ async function registerHandler(request: NextRequest): Promise<NextResponse> {
         }
       });
 
-      return { business, account, preferences };
+      // Log de auditoria para criação da conta bancária
+      await tx.auditoria.create({
+        data: {
+          businessId: business.id,
+          accountId: account.id,
+          context: ContextEnum.ACCOUNT_CREATE,
+          description: `Conta bancária "Conta Padrão" criada para empresa "${business.name}"`,
+          additionalData: {
+            accountName: account.name,
+            accountEmail: account.email,
+            businessName: business.name
+          }
+        }
+      });
+
+      return { business, account, preferences, contaBancaria };
     });
 
     return NextResponse.json(

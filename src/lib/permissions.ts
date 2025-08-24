@@ -1,3 +1,4 @@
+import { navigationItems } from '@/constants/navigationItems';
 import { prisma } from '@/lib/prisma';
 
 /**
@@ -56,7 +57,7 @@ export async function getUserAccessibleRoutes(
 
     // Donos da empresa têm acesso a todas as rotas
     if (account.isCompanyOwner) {
-      return ['/dashboard', '/profile', '/audit-logs', '/business-admin'];
+      return navigationItems.map(item => item.route);
     }
 
     // Buscar rotas que o usuário pode acessar baseado em seus cargos

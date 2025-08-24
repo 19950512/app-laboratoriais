@@ -44,6 +44,10 @@ docker compose -f docker-compose.dev.yml exec app npx prisma migrate reset --for
 echo "⚙️ Gerando Prisma Client..."
 docker compose -f docker-compose.dev.yml exec app npx prisma generate
 
+# Sincronizar o schema do Prisma com o banco de dados
+echo "🔄 Sincronizando o schema do Prisma com o banco de dados..."
+docker compose -f docker-compose.dev.yml exec app npx prisma db push
+
 echo "✅ Ambiente de desenvolvimento iniciado!"
 echo "🌐 Aplicação disponível em: http://localhost:3000"
 echo "🗄️ Banco de dados PostgreSQL: localhost:5432"

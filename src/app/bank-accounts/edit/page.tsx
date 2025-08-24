@@ -1,8 +1,8 @@
 "use client";
 
 import { AppLayout } from "@/components/layout/AppLayout";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useToast } from "@/components/ui/Toast";
 import { getCookie } from "cookies-next";
@@ -12,18 +12,50 @@ const bankOptions = [
   { value: "asaas", label: "Asaas", logo: "/logos/asaas.svg" },
 ];
 
-export default function CreateBankAccount() {
+export default function EditBankAccount() {
   const { addToast } = useToast();
   const [formData, setFormData] = useState({
-    nameAccountBank: "",
-    bankName: "",
-    certificatePublic: "",
-    certificatePrivate: "",
-    clientId: "",
-    secretId: "",
+    nameAccountBank: "", // Valor padrão vazio
+    bankName: "", // Valor padrão vazio
+    certificatePublic: "", // Valor padrão vazio
+    certificatePrivate: "", // Valor padrão vazio
+    clientId: "", // Valor padrão vazio
+    secretId: "", // Valor padrão vazio
   });
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const accountId = searchParams.get("id");
+
+  useEffect(() => {
+    if (accountId) {
+      fetchBankAccount(accountId);
+    }
+  }, [accountId]);
+
+  const fetchBankAccount = async (id: string) => {
+    try {
+      const token = getCookie("auth-token");
+      const response = await fetch(`/api/bank-accounts/?id=${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setFormData(data);
+      } else {
+        addToast({
+          type: "error",
+          title: "Erro ao carregar conta",
+          message: "Não foi possível carregar os dados da conta bancária.",
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao carregar conta bancária:", error);
+    }
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -35,7 +67,7 @@ export default function CreateBankAccount() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const token = getCookie("auth-token"); // Recupera o token do cookie
+    const token = getCookie("auth-token");
 
     if (!token) {
       console.error("Token não encontrado nos cookies.");
@@ -47,8 +79,8 @@ export default function CreateBankAccount() {
       return;
     }
 
-    const response = await fetch("/api/bank-accounts", {
-      method: "POST",
+    const response = await fetch(`/api/bank-accounts/?id=${accountId}`, {
+      method: "PUT",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
@@ -61,21 +93,21 @@ export default function CreateBankAccount() {
     if (response.ok) {
       addToast({
         type: "success",
-        title: "Conta criada com sucesso!",
+        title: "Conta atualizada com sucesso!",
       });
       router.push("/bank-accounts");
     } else {
       addToast({
         type: "error",
-        title: "Erro ao criar conta",
-        message: responseData.error || "Não foi possível criar a conta bancária. Tente novamente.",
+        title: "Erro ao atualizar conta",
+        message: responseData.error || responseData.message || "Não foi possível atualizar a conta bancária. Tente novamente.",
       });
-      console.error("Failed to create bank account", responseData);
+      console.error("Failed to update bank account", responseData);
     }
   };
 
   return (
-    <AppLayout title="Criar Conta Bancária" subtitle="Adicione uma nova conta bancária ao sistema">
+    <AppLayout title="Editar Conta Bancária" subtitle="Atualize os dados da conta bancária">
       <div className="max-w-3xl mx-auto mt-10 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -158,7 +190,7 @@ export default function CreateBankAccount() {
               type="submit"
               className="px-6 py-3 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              Criar Conta
+              Atualizar Conta
             </button>
           </div>
         </form>

@@ -65,6 +65,11 @@ export enum ThemeEnum {
   LIGHT = 'light',
 }
 
+export enum Bank {
+  INTER = 'inter',
+  ASAAS = 'asaas'
+}
+
 export enum ContextEnum {
   AUTH_LOGIN = 'auth_login',
   AUTH_LOGOUT = 'auth_logout',
@@ -86,6 +91,9 @@ export enum ContextEnum {
   ROLE_CREATE = 'role_create',
   ROLE_UPDATE = 'role_update',
   ROLE_DELETE = 'role_delete',
+  BANK_ACCOUNT_CREATE = 'bank_account_create',
+  BANK_ACCOUNT_UPDATE = 'bank_account_update',
+  BANK_ACCOUNT_DELETE = 'bank_account_delete',
 }
 
 // DTOs para requests/responses
@@ -245,6 +253,7 @@ export interface BankAccount {
   id: string;
   nameAccountBank: string;
   bankName: string;
+  bankLogo: string;
   certificatePublic: string;
   certificatePrivate: string;
   clientId: string;

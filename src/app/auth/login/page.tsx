@@ -27,7 +27,7 @@ export default function LoginPage(): JSX.Element {
 
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
-      router.push('/dashboard');
+      router.push('/profile');
     }
   }, [isAuthenticated, isLoading, router]);
 

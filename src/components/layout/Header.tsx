@@ -16,6 +16,7 @@ import {
   X
 } from 'lucide-react';
 import { useState } from 'react';
+import { navigationItems } from '@/constants/navigationItems';
 
 interface HeaderProps {
   title?: string;
@@ -31,30 +32,6 @@ export function Header({ title, subtitle }: HeaderProps) {
   const { canAccess } = useAccessibleRoutes();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  // Definir itens de navegação
-  const navigationItems = [
-    { 
-      label: 'Dashboard', 
-      route: '/dashboard', 
-      always: false // Será verificado pelas permissões
-    },
-    { 
-      label: 'Perfil', 
-      route: '/profile', 
-      always: true // Sempre acessível
-    },
-    { 
-      label: 'Auditoria', 
-      route: '/audit-logs', 
-      always: false
-    },
-    { 
-      label: 'Admin Empresa', 
-      route: '/business-admin', 
-      always: false
-    }
-  ];
 
   // Filtrar itens baseado nas permissões
   const accessibleItems = navigationItems.filter(item => 
@@ -111,7 +88,7 @@ export function Header({ title, subtitle }: HeaderProps) {
                 <Building className="h-8 w-8" />
               )}
               <div className="hidden md:block">
-                <div className="text-lg font-bold">LabManager</div>
+                <div className="text-lg font-bold">Slipksoft</div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">
                   {business?.name || 'Carregando...'}
                 </div>

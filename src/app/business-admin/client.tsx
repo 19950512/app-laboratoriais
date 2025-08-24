@@ -26,6 +26,7 @@ import {
   Shield,
   Lock
 } from 'lucide-react';
+import { navigationItems } from '@/constants/navigationItems';
 
 interface User {
   id: string;
@@ -726,16 +727,18 @@ export default function BusinessAdminPage() {
           </div>
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <RoutePermissionManager 
-                route="/dashboard" 
-                onPermissionChange={() => {}} 
-                refreshTrigger={refreshTrigger}
-              />
-              <RoutePermissionManager 
-                route="/audit-logs" 
-                onPermissionChange={() => {}} 
-                refreshTrigger={refreshTrigger}
-              />
+              {navigationItems.map(item => (
+
+                !item.always ? (
+                  <RoutePermissionManager 
+                    key={item.route}
+                    route={item.route}
+                    onPermissionChange={() => {}}
+                    refreshTrigger={refreshTrigger}
+                  />
+                ) : null
+                
+              ))}
             </div>
           </div>
         </div>

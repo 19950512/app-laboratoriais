@@ -6,6 +6,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { getCookie } from 'cookies-next';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const BankAccountsPage = () => {
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
@@ -75,34 +76,36 @@ const BankAccountsPage = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {bankAccounts.map((account) => (
-                    <tr key={account.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  {bankAccounts.map((bank) => (
+                    <tr key={bank.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {account.nameAccountBank}
+                          {bank.nameAccountBank}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <img
-                            src={`/logos/${account.bankName}.png`}
-                            alt={account.bankName}
-                            className="h-8 w-8 rounded-full mr-2"
+                          <Image
+                            src={bank.bankLogo}
+                            alt={bank.bankName}
+                            width={100}
+                            height={100}
                           />
                           <span className="text-sm text-gray-500 dark:text-gray-400">
-                            {account.bankName}
+                            {bank.bankName}
                           </span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end space-x-2">
-                          <button
-                            onClick={() => {}}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                            title="Editar conta"
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </button>
+                          <Link href={`/bank-accounts/edit?id=${bank.id}`}>
+                            <button
+                              className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                              title="Editar conta"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                          </Link>
                           <button
                             onClick={() => {}}
                             className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"

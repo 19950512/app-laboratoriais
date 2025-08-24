@@ -209,4 +209,7 @@ enum ContextEnum {
   role_create
   role_update
   role_delete
+  bank_account_create
+  bank_account_delete
+  bank_account_update
 }
